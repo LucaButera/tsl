@@ -60,7 +60,6 @@ class PandasParsingMixin:
         if pattern is None:
             pattern = self._infer_pattern(shape)
         pattern = checks.check_pattern(pattern)
-        self._validate_pattern(pattern, shape)
         dims = pattern.strip().split(' ')
 
         if not isinstance(obj, pd.DataFrame):
@@ -90,7 +89,9 @@ class PandasParsingMixin:
     def _compute_shape(self, obj: FrameArray) -> tuple:
         if not isinstance(obj, pd.DataFrame):
             return np.asarray(obj).shape
-        return (len(obj),) + obj.columns.levshape
+        elif obj.columns.nlevels > 1:
+            return (len(obj),) + obj.columns.levshape
+        return obj.shape
 
     def _infer_pattern(self, shape: tuple):
         out = []
@@ -107,20 +108,6 @@ class PandasParsingMixin:
         except RuntimeError:
             raise RuntimeError(f"Cannot infer pattern from shape: {shape}.")
         return pattern
-
-    def _validate_pattern(self, pattern: str, shape: tuple):
-        dims = pattern.split(' ')
-        if shape is not None:
-            try:
-                assert len(dims) == len(shape)
-                for dim, p in zip(shape, dims):
-                    if p == 't':
-                        assert dim == self.length
-                    elif p == 'n':
-                        assert dim == self.n_nodes
-            except AssertionError:
-                raise RuntimeError(f'Pattern "{pattern}" does not match '
-                                   f'shape {shape}.')
 
     def _value_to_kwargs(self, value: Union[DataArray, List, Tuple, Mapping]):
         keys = ['value', 'pattern']

@@ -66,7 +66,8 @@ class PandasDataset(Dataset, PandasParsingMixin, TemporalFeaturesMixin):
         default_splitting_method (str, optional): Default splitting method for
             the dataset, i.e., how to split the dataset into train/val/test.
             (default: :obj:`temporal`)
-        sort_index (bool): whether to keep the dataset chronologically sorted.
+        sort_index (bool): whether to sort the dataset chronologically at
+            initialization.
             (default: :obj:`True`)
         name (str, optional): Optional name of the dataset.
             (default: :obj:`class_name`)
@@ -98,12 +99,12 @@ class PandasDataset(Dataset, PandasParsingMixin, TemporalFeaturesMixin):
         self.mask: Optional[pd.DataFrame] = None
         self._secondary = dict()
 
-        self.sort_index = sort_index
+        # Set data precision before parsing objects
         self.precision = precision
 
         # set dataset's dataframe
         self.df: pd.DataFrame = self._parse_primary(primary, initialize=True)
-        if self.sort_index:
+        if sort_index:
             self.df.sort_index(inplace=True)
 
         self.set_mask(mask)
@@ -201,8 +202,6 @@ class PandasDataset(Dataset, PandasParsingMixin, TemporalFeaturesMixin):
     def set_primary(self, value: FrameArray):
         r"""Set sequence of primary channels at :obj:`self.df`."""
         self.df = self._parse_primary(value)
-        if self.sort_index:
-            self.df.sort_index(inplace=True)
 
     def set_mask(self, mask: OptFrameArray):
         r"""Set mask of primary channels, i.e., a bool for each (node, time
@@ -389,11 +388,12 @@ class PandasDataset(Dataset, PandasParsingMixin, TemporalFeaturesMixin):
         def index_to_mask(index, support):
             if index is None:
                 return slice(None)
+            elif isinstance(index, pd.Index):
+                return index
             index: np.ndarray = np.asarray(index)
             if index.dtype == np.bool:
-                return index
-            else:
-                return np.in1d(support, index)
+                index = support[index]
+            return index
 
         step_index = index_to_mask(step_index, self.index)
         node_index = index_to_mask(node_index, self.nodes)
@@ -457,7 +457,7 @@ class PandasDataset(Dataset, PandasParsingMixin, TemporalFeaturesMixin):
 
     def dataframe(self) -> pd.DataFrame:
         df = self.df.reindex(index=self.index,
-                             columns=self.columns(),
+                             columns=self._columns_multiindex(),
                              copy=True)
         return df
 

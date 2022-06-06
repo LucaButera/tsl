@@ -62,7 +62,7 @@ def check_pattern(pattern: str) -> str:
     # check 'c'/'f' follows 'n', 'n' follows 't'
     # allow for duplicate 'n' or 't' dims (e.g., 'n n', 't t n f')
     # allow for limitless 'c'/'f' dims (e.g., 't n f f')
-    if PATTERN_MATCH.match(pattern_squeezed):
+    if not PATTERN_MATCH.match(pattern_squeezed):
         raise RuntimeError(f'Pattern "{pattern}" not allowed.')
     return ' '.join(pattern_squeezed)
 
