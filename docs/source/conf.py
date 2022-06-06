@@ -1,6 +1,6 @@
 import datetime
-import sphinx_rtd_theme
 import doctest
+
 import tsl
 
 extensions = [
@@ -15,7 +15,6 @@ extensions = [
 ]
 
 autosummary_generate = True
-templates_path = ['_templates']
 
 source_suffix = '.rst'
 master_doc = 'index'
@@ -30,8 +29,7 @@ copyright = '{}, {}'.format(datetime.datetime.now().year, author)
 version = tsl.__version__
 release = tsl.__version__
 
-html_theme = 'sphinx_rtd_theme'
-html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+html_theme = 'furo'
 
 doctest_default_flags = doctest.NORMALIZE_WHITESPACE
 autodoc_member_order = 'bysource'
@@ -45,20 +43,30 @@ intersphinx_mapping = {
 }
 
 html_theme_options = {
-    'collapse_navigation': False,
-    'display_version': True,
-    'logo_only': True,
-    'navigation_depth': 2,
+    "sidebar_hide_name": True,
+    "light_css_variables": {
+        "color-brand-primary": "#ee4c2c",
+        "color-brand-content": "#ee4c2c",
+    },
+    "dark_css_variables": {
+        "color-code-background": "#131416",
+        # "color-background-primary": "#131416",
+        "color-brand-primary": "#ee4c2c",
+        "color-brand-content": "#ee4c2c",
+    }
 }
+html_title = "Torch Spatiotemporal"
+pygments_style = "trac"
+pygments_dark_style = "material"
 
 html_static_path = ['_static']
 html_logo = '_static/img/tsl_logo.svg'
 html_favicon = '_static/img/tsl_logo.svg'
 
-html_context = {'css_files': ['_static/css/custom.css']}
 rst_context = {'tsl': tsl}
 
 add_module_names = False
+
 
 def setup(app):
     def skip(app, what, name, obj, skip, options):
