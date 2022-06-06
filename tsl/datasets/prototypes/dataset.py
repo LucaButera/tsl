@@ -456,9 +456,7 @@ class Dataset(object):
         Args:
             node_index: Sequence of grouped node ids.
         """
-        return preprocessing.aggregate(self.dataframe(),
-                                       node_index,
-                                       self.spatial_aggregation)
+        raise NotImplementedError
 
     # Getters for SpatioTemporalDataset
 

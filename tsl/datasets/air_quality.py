@@ -89,11 +89,26 @@ class AirQualitySplitter(Splitter):
 
 
 class AirQuality(PandasDataset, MissingValuesMixin):
-    """Measurements of pollutant :math:`PM2.5` collected by 437 air quality
+    r"""Measurements of pollutant :math:`PM2.5` collected by 437 air quality
     monitoring stations spread across 43 Chinese cities from May 2014 to April
     2015.
 
-    See more at https://www.microsoft.com/en-us/research/project/urban-air/"""
+    The dataset contains also a smaller version :obj:`AirQuality(small=True)`
+    with only the subset of nodes containing the 36 sensors in Beijing.
+
+    Data collected inside the `Urban Air <https://www.microsoft.com/en-us/research/project/urban-air/>`_
+    project.
+
+    Dataset size:
+        + Time steps: 8760
+        + Nodes: 437
+        + Channels: 1
+        + Sampling rate: 1 hour
+        + Missing values: 25.67%
+
+    Static attributes:
+        + :obj:`dist`: :math:`N \times N` matrix of node pairwise distances.
+    """
     url = "https://drive.switch.ch/index.php/s/W0fRqotjHxIndPj/download"
 
     similarity_options = {'distance'}
@@ -116,15 +131,13 @@ class AirQuality(PandasDataset, MissingValuesMixin):
         else:
             self.masked_sensors = list(masked_sensors)
         df, mask, eval_mask, dist = self.load(impute_nans=impute_nans)
-        super().__init__(dataframe=df,
-                         attributes=dict(dist=dist),
-                         mask=mask,
-                         freq=freq,
+        super().__init__(primary=df, mask=mask, freq=freq,
                          similarity_score='distance',
                          temporal_aggregation='mean',
                          spatial_aggregation='mean',
                          default_splitting_method='air_quality',
                          name='AQI36' if self.small else 'AQI')
+        self.add_secondary('dist', dist, pattern='n n')
         self.set_eval_mask(eval_mask)
 
     @property

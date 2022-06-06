@@ -15,25 +15,33 @@ def to_numpy(df):
     return df.values.reshape((-1, *cols.levshape))
 
 
-def aggregate(df: pd.DataFrame, node_index: Index, aggr_fn: Callable = np.sum):
-    """Aggregate nodes in MultiIndexed DataFrames.
+def aggregate(df: pd.DataFrame, index: Index, aggr_fn: Callable = np.sum,
+              axis: int = 1, level: int = 0):
+    """Aggregate rows/columns in (MultiIndexed) DataFrame according to a new
+    index.
 
     Args:
-        df (pd.DataFrame): MultiIndexed DataFrame to be aggregated. Columns must
-            be a :class:`~pandas.MultiIndex` object with :obj:`nodes` in first
-            level and :obj:`channels` in second.
-        node_index (Index): A sequence of :obj:`cluster_id` with length equal to
-            number of nodes in :obj:`df`. The i-th node will be mapped to
-            cluster at i-th position in :obj:`node_index`.
-        aggr_fn (Callable): Function to be used for cluster aggregation.
+        df (pd.DataFrame): :class:`~pandas.DataFrame` to be aggregated.
+        index (Index): A sequence of :obj:`cluster_id` with length equal to
+            the index over which aggregation is performed. The :obj:`i`-th
+            element of index at :obj:`axis` and :obj:`level` will be mapped to
+            :obj:`index[i]`-th position in new index.
+        aggr_fn (Callable): Function to be used for aggregation.
+        axis (int): Axis over which performing aggregation, :obj:`0` for index,
+        :obj:`1` for columns.
+        (default :obj:`1`)
+        level (int): Level over which performing aggregation if :obj:`axis` is
+        a :class:`~pandas.MultiIndex`.
+        (default :obj:`0`)
     """
-    assert df.columns.nlevels == 2,\
-        "This function currently supports only MultiIndexed DataFrames."
-    channels = df.columns.unique(1).values
-    grouper = pd.MultiIndex.from_product([node_index, channels],
-                                         names=df.columns.names)
-    df = df.groupby(grouper, axis=1).aggregate(aggr_fn)
-    df.columns = pd.MultiIndex.from_tuples(df.columns, names=grouper.names)
+    if axis == 0:
+        df = df.groupby(index, axis=0).aggregate(np.min)
+    elif axis == 1:
+        cols = [df.columns.unique(i).values for i in range(df.columns.nlevels)]
+        cols[level] = index
+        grouper = pd.MultiIndex.from_product(cols, names=df.columns.names)
+        df = df.groupby(grouper, axis=1).aggregate(aggr_fn)
+        df.columns = pd.MultiIndex.from_tuples(df.columns, names=grouper.names)
     return df
 
 
@@ -88,23 +96,3 @@ def compute_mean(x: Union[pd.DataFrame, np.ndarray],
     if isinstance(x, np.ndarray):
         df_mean = df_mean.values.reshape(shape)
     return df_mean
-
-
-# todo convert to pandas function with holidays
-def holidays(index):
-    """Return a binary dataframe that takes value: 1 if the day is a holiday, 0
-    otherwise.
-
-    Args:
-        index (pd.DateTimeIndex): The datetime-like index.
-    """
-    assert isinstance(index, pd.DatetimeIndex)
-    holidays = (index.month == 1) & (index.day == 1)  # new year
-    holidays |= (index.month == 1) & (index.day == 6)  # epiphany
-    holidays |= (index.month == 5) & (index.day == 21)  # ascension day
-    holidays |= (index.month == 12) & (index.day == 24)  # Christmas' eve
-    holidays |= (index.month == 12) & (index.day == 25)  # Christmas
-    holidays |= (index.month == 12) & (index.day == 26)  # Saint Steven
-    holidays |= index.weekday == 6  # sundays
-    df = pd.DataFrame(holidays, index=index, columns='holiday').astype('uint8')
-    return df
