@@ -215,6 +215,32 @@ class PandasDataset(Dataset, PandasParsingMixin, TemporalFeaturesMixin):
 
     def add_secondary(self, name: str, value: FrameArray,
                       pattern: Optional[str] = None):
+        r"""Add secondary data to the dataset. Examples of secondary data are
+        exogenous variables (in the form of multidimensional covariates) or
+        static attributes (e.g., graph/node metadata). Parameter :obj:`pattern`
+        specifies what each axis refers to:
+
+        - 't': temporal dimension;
+        - 'n': node dimension;
+        - 'c'/'f': channels/features dimension.
+
+        For instance, the pattern of a node-level covariate is 't n f', while a
+        pairwise metric between nodes has pattern 'n n'.
+
+        Args:
+            name (str): the name of the object. You can then access the added
+                object as :obj:`dataset.{name}`.
+            value (FrameArray): the object to be added.
+            pattern (str, optional): the pattern of the object. A pattern
+                specifies what each axis refers to:
+
+                - 't': temporal dimension;
+                - 'n': node dimension;
+                - 'c'/'f': channels/features dimension.
+
+                If :obj:`None`, the pattern is inferred from the shape.
+                (default :obj:`None`)
+        """
         # name cannot be an attribute of self, but allow override
         invalid_names = set(dir(self))
         if name in invalid_names:
@@ -328,15 +354,16 @@ class PandasDataset(Dataset, PandasParsingMixin, TemporalFeaturesMixin):
         self.freq = freq
 
     def resample(self, freq=None, aggr: str = None,
-                  keep: Literal["first", "last", False] = 'first',
+                 keep: Literal["first", "last", False] = 'first',
                  mask_tolerance: float = 0.):
         return deepcopy(self).resample_(freq, aggr, keep, mask_tolerance)
 
     def aggregate_(self, node_index: Optional[Union[Index, Mapping]] = None,
-                   mask_tolerance: float = 0.):
+                   aggr: str = None, mask_tolerance: float = 0.):
 
         # get aggregation function among numpy functions
-        aggr_fn = getattr(np, self.spatial_aggregation)
+        aggr = aggr if aggr is not None else self.spatial_aggregation
+        aggr_fn = getattr(np, aggr)
 
         # node_index parsing: eventually must be an n_nodes-sized array where
         # value at position i is the cluster id of i-th node
@@ -380,8 +407,8 @@ class PandasDataset(Dataset, PandasParsingMixin, TemporalFeaturesMixin):
             self._secondary[name]['value'] = value
 
     def aggregate(self, node_index: Optional[Union[Index, Mapping]] = None,
-                  mask_tolerance: float = 0.):
-        return deepcopy(self).aggregate_(node_index, mask_tolerance)
+                  aggr: str = None, mask_tolerance: float = 0.):
+        return deepcopy(self).aggregate_(node_index, aggr, mask_tolerance)
 
     def reduce_(self, step_index=None, node_index=None):
 

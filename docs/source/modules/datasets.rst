@@ -44,3 +44,4 @@ multivariate time series datasets that can be expressed by
     :inherited-members:
 
 .. autoclass:: PandasDataset
+    :inherited-members:

@@ -365,12 +365,11 @@ class Dataset(object):
                          normalize_axis: Optional[int] = None,
                          layout: str = 'edge_index',
                          **kwargs) -> Union[ndarray, Tuple, ScipySparseMatrix]:
-        r"""Returns the weighted adjacency matrix :math:`\mathbf{W} \in
-        \mathbb{R}^{N \\times N}`, where :math:`N=`:obj:`self.n_nodes`. The
-        element :math:`w_{i,j} \in \mathbf{W}` is 0 if there not exists an edge
-        connecting node :math:`i` to node :math:`j`. If `sparse`, returns edge
-        index :math:`\mathcal{E}` and edge weights :math:`\mathbf{w} \in
-        \mathbb{R}^{|\mathcal{E}|}` (default: :obj:`True`).
+        r"""Returns the weighted adjacency matrix :math:`\mathbf{A} \in
+        \mathbb{R}^{N \times N}`, where :math:`N=`:obj:`self.n_nodes`. The
+        element :math:`a_{i,j} \in \mathbf{A}` is 0 if there not exists an edge
+        connecting node :math:`i` to node :math:`j`. The return type depends on
+        the specified :obj:`layout` (default: :obj:`edge_index`).
 
         Args:
             method (str, optional): Method for the similarity computation. If
@@ -386,17 +385,23 @@ class Dataset(object):
             force_symmetric (bool): Force adjacency matrix to be symmetric by
                 taking the maximum value between the two directions for each
                 edge. (default: :obj:`False`)
-            normalize_axis (int, optional): Divide edge weight :math:`w_{i, j}`
-                by :math:`\sum_k w_{i, k}`, if :obj:`normalize_axis=0` or
-                :math:`\sum_k w_{k, j}`, if :obj:`normalize_axis=1`. :obj:`None`
+            normalize_axis (int, optional): Divide edge weight :math:`a_{i, j}`
+                by :math:`\sum_k a_{i, k}`, if :obj:`normalize_axis=0` or
+                :math:`\sum_k a_{k, j}`, if :obj:`normalize_axis=1`. :obj:`None`
                 for no normalization.
                 (default: :obj:`None`)
             layout (str): Convert matrix to a dense/sparse format. Available
                 options are:
-                  - dense: keep matrix dense
-                  - edge_index: convert to (edge_index, edge_weight) tuple
-                  - coo, csr, csc: convert to specified scipy sparse matrix
-                (default: 'dense')
+
+                - :obj:`dense`: keep matrix dense :math:`\mathbf{A} \in
+                  \mathbb{R}^{N \times N}`.
+                - :obj:`edge_index`: convert to (edge_index, edge_weight) tuple,
+                  where edge_index has shape :math:`[2, E]` and edge_weight has
+                  shape :math:`[E]`, being :math:`E` the number of edges.
+                - :obj:`coo`/:obj:`csr`/:obj:`csc`: convert to specified scipy
+                  sparse matrix type.
+
+                (default: 'edge_index')
             **kwargs (optional): Additional optional keyword arguments for
                 similarity computation.
 
